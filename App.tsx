@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Calendar as CalendarIcon, Wallet, Building2, Phone, FileText } from 'lucide-react';
+import { Plus, Calendar as CalendarIcon, Wallet } from 'lucide-react';
 import Header from './components/Header';
 import TransactionList from './components/TransactionList';
 import SummaryChart from './components/SummaryChart';
@@ -45,7 +45,7 @@ const GoogleIcon = () => (
 
 const App: React.FC = () => {
   // Estados de navegação e dados
-  const [currentPage, setCurrentPage] = useState<'login' | 'register' | 'dashboard'>('login');
+  const [currentPage, setCurrentPage] = useState<'login' | 'dashboard'>('login');
   const [user, setUser] = useState<User>(INITIAL_USER);
   const [transactions, setTransactions] = useState<Transaction[]>(INITIAL_TRANSACTIONS);
   const [currentFirebaseUser, setCurrentFirebaseUser] = useState<any>(null);
@@ -55,13 +55,6 @@ const App: React.FC = () => {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [timeRange, setTimeRange] = useState<TimeRange>('today');
   const [viewDate, setViewDate] = useState<Date>(new Date());
-  
-  // Estados do Formulário de Cadastro
-  const [formData, setFormData] = useState({
-    companyName: '',
-    document: '', // CPF ou CNPJ
-    phone: ''
-  });
 
   const isTodayView = isSameDay(viewDate, new Date());
   
@@ -83,39 +76,9 @@ const App: React.FC = () => {
         };
         setUser(userData);
         
-        // Immediately navigate based on a quick check
-        // Then load data in the background
-        let shouldGoToDashboard = false;
-        
-        try {
-          // Quick check for profile - don't wait too long
-          const profilePromise = getUserProfile(firebaseUser.uid);
-          const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), 500));
-          const userProfile = await Promise.race([profilePromise, timeoutPromise]) as any;
-          
-          if (userProfile && userProfile.companyName) {
-            shouldGoToDashboard = true;
-            if (isMounted) {
-              setUser(prev => ({
-                ...prev,
-                companyName: userProfile.companyName,
-                companyDocument: userProfile.companyDocument,
-                phone: userProfile.phone
-              }));
-              setFormData({
-                companyName: userProfile.companyName || '',
-                document: userProfile.companyDocument || '',
-                phone: userProfile.phone || ''
-              });
-            }
-          }
-        } catch (error) {
-          console.error("Error checking profile:", error);
-        }
-        
-        // Navigate immediately
+        // Go directly to dashboard
         if (isMounted) {
-          setCurrentPage(shouldGoToDashboard ? 'dashboard' : 'register');
+          setCurrentPage('dashboard');
         }
         
         // Load transactions in background (don't block navigation)
@@ -150,33 +113,6 @@ const App: React.FC = () => {
       console.error("Login failed:", error);
       alert("Falha ao fazer login com Google. Tente novamente.");
     }
-  };
-
-  const handleRegisterSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Validar se campos estão preenchidos (básico)
-    if (!formData.companyName || !formData.document || !formData.phone) return;
-
-    setUser(prev => ({
-      ...prev,
-      companyName: formData.companyName,
-      companyDocument: formData.document,
-      phone: formData.phone
-    }));
-    // Save user profile to Firestore
-    if (currentFirebaseUser) {
-      saveUserProfile(currentFirebaseUser.uid, {
-        name: user.name,
-        email: user.email,
-        companyName: formData.companyName,
-        companyDocument: formData.document,
-        phone: formData.phone
-      }).catch(error => {
-        console.error("Error saving profile:", error);
-        alert("Erro ao salvar perfil. Tente novamente.");
-      });
-    }
-    setCurrentPage('dashboard');
   };
 
   const handleAddTransaction = async (description: string, amount: number, type: TransactionType) => {
@@ -219,7 +155,6 @@ const App: React.FC = () => {
       setViewDate(new Date());
       setTimeRange('today');
       setUser(INITIAL_USER);
-      setFormData({ companyName: '', document: '', phone: '' });
       setCurrentFirebaseUser(null);
     } catch (error) {
       console.error("Logout failed:", error);
@@ -264,78 +199,6 @@ const App: React.FC = () => {
             <GoogleIcon />
             <span>Entrar com Google</span>
           </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (currentPage === 'register') {
-    return (
-      <div className="relative h-screen w-full flex items-center justify-center overflow-hidden bg-gray-50">
-         <div 
-          className="absolute inset-0 z-0 bg-cover bg-center opacity-10"
-          style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1497215728101-856f4ea42174?q=80&w=2070&auto=format&fit=crop")' }}
-        ></div>
-
-        <div className="relative z-10 bg-white p-8 sm:p-10 rounded-3xl shadow-xl max-w-lg w-full border border-gray-100 animate-in slide-in-from-right duration-300">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-gray-800">Conclua seu cadastro</h2>
-            <p className="text-orange-500 mt-2 text-sm">Preencha os dados da sua empresa para continuar</p>
-          </div>
-
-          <form onSubmit={handleRegisterSubmit} className="space-y-5">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                <Building2 size={16} className="text-orange-500" />
-                Nome da Empresa
-              </label>
-              <input 
-                type="text" 
-                required
-                value={formData.companyName}
-                onChange={e => setFormData({...formData, companyName: e.target.value})}
-                className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all text-gray-900 placeholder-gray-400"
-                placeholder="Ex: Minha Loja Ltda"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                <FileText size={16} className="text-orange-500" />
-                CPF ou CNPJ
-              </label>
-              <input 
-                type="text" 
-                required
-                value={formData.document}
-                onChange={e => setFormData({...formData, document: e.target.value})}
-                className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all text-gray-900 placeholder-gray-400"
-                placeholder="00.000.000/0000-00"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                <Phone size={16} className="text-orange-500" />
-                Telefone
-              </label>
-              <input 
-                type="tel" 
-                required
-                value={formData.phone}
-                onChange={e => setFormData({...formData, phone: e.target.value})}
-                className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all text-gray-900 placeholder-gray-400"
-                placeholder="(00) 00000-0000"
-              />
-            </div>
-
-            <button
-              type="submit"
-              className="w-full mt-4 py-4 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl shadow-lg hover:shadow-orange-500/25 transition-all"
-            >
-              Finalizar e Acessar
-            </button>
-          </form>
         </div>
       </div>
     );
