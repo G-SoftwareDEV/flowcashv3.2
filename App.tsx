@@ -159,6 +159,25 @@ const App: React.FC = () => {
     }
   };
 
+  const handleSwitchAccount = async () => {
+    try {
+      await logoutUser();
+      setCurrentPage('login');
+      setViewDate(new Date());
+      setTimeRange('today');
+      setUser(INITIAL_USER);
+      setCurrentFirebaseUser(null);
+      // Trigger Google login immediately
+      setTimeout(() => {
+        const loginBtn = document.querySelector('button[onclick*="handleGoogleLogin"]') as HTMLButtonElement;
+        if (loginBtn) loginBtn.click();
+      }, 500);
+    } catch (error) {
+      console.error("Error switching account:", error);
+      alert("Erro ao trocar conta. Tente novamente.");
+    }
+  };
+
   // --- Lógica de Filtros ---
   let displayTransactions: Transaction[] = [];
   if (!isTodayView) {
@@ -204,7 +223,7 @@ const App: React.FC = () => {
   // Dashboard Page
   return (
     <div className="h-screen flex flex-col bg-gray-50">
-      <Header user={user} onLogout={handleLogout} />
+      <Header user={user} onLogout={handleLogout} onSwitchAccount={handleSwitchAccount} />
 
       <main className="flex-1 overflow-hidden relative">
         <div className="h-full max-w-7xl mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
