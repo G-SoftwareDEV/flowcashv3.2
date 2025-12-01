@@ -11,10 +11,7 @@ import { filterTransactionsByRange, isSameDay, formatDate } from './services/uti
 import { signInWithGoogle, logoutUser, authStateListener, saveTransaction, getUserTransactions, deleteTransactionFromFirestore, saveUserProfile, getUserProfile } from './services/firebase';
 
 // Dados iniciais
-const INITIAL_TRANSACTIONS: Transaction[] = [
-  { id: '1', description: 'Salário Mensal', amount: 3500, type: 'income', date: new Date() },
-  { id: '2', description: 'Aluguel', amount: 1200, type: 'expense', date: new Date() },
-];
+const INITIAL_TRANSACTIONS: Transaction[] = [];
 
 const INITIAL_USER: User = {
   name: "",
