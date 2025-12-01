@@ -167,11 +167,11 @@ const App: React.FC = () => {
       setTimeRange('today');
       setUser(INITIAL_USER);
       setCurrentFirebaseUser(null);
-      // Trigger Google login immediately
+      
+      // Wait a moment for state to update, then trigger Google login
       setTimeout(() => {
-        const loginBtn = document.querySelector('button[onclick*="handleGoogleLogin"]') as HTMLButtonElement;
-        if (loginBtn) loginBtn.click();
-      }, 500);
+        handleGoogleLogin();
+      }, 300);
     } catch (error) {
       console.error("Error switching account:", error);
       alert("Erro ao trocar conta. Tente novamente.");
